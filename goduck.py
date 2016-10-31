@@ -72,7 +72,7 @@ def duck(http, url, outDir, depth=1):
     if not os.path.exists(newOutDir):
         os.makedirs(newOutDir)
 
-    # Duckify the children
+    # Duck the children
     for link in soup.findAll('a'):
         if link.has_attr('href') and link['href'] != '..' and link['href'] != '#' and \
                 link['href'] != '/' and link['href'][0] != '/' and \
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     projTitle = args.t
 
     print('Starting godoc server on port ' + port + '...')
-    p = subprocess.Popen(['/usr/local/bin/godoc', '-http=:' + port])
+    p = subprocess.Popen(['godoc', '-http=:' + port])
     time.sleep(2)
 
     outDir = args.o
