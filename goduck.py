@@ -45,13 +45,13 @@ def beautify(soup, depth):
             script['src'] = str(script['src']).replace('/lib/godoc/', stylePath)
 
     # Change html title
-    if libTitle is not None:
+    if projTitle is not None:
         title = soup.find('title')
-        title.string = title.text.split('-')[0] + '- ' + libTitle
+        title.string = title.text.split('-')[0] + '- ' + projTitle
 
     # Change page header
     header = soup.find(name="div", id="heading-wide")
-    header.string = libTitle
+    header.string = projTitle
 
     # Remove unused menu items
     remove_tag(soup, name="a", text="Documents")
@@ -60,8 +60,8 @@ def beautify(soup, depth):
     remove_tag(soup, name="input", id="search")
 
 
-def duckify(http, url, outDir, depth=1):
-    print('Duckifying ' + url)
+def duck(http, url, outDir, depth=1):
+    print('Ducking ' + url)
 
     s, content = http.request(url)
     soup = bs4.BeautifulSoup(content, 'html.parser')
@@ -78,7 +78,7 @@ def duckify(http, url, outDir, depth=1):
                 link['href'] != '/' and link['href'][0] != '/' and \
                 link['href'][0] != '#' and link['href'][:7] != 'http://' and \
                 link['href'][:8] != "https://" and link['href'][0:4] != 'www':
-            duckify(http, url + link['href'], newOutDir, depth + 1)
+            duck(http, url + link['href'], newOutDir, depth + 1)
             link['href'] = link['href'] + 'index.html'
 
     with open(newOutDir + 'index.html', 'w') as outf:
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     dir = serverUrl + 'pkg/' + args.d
     if dir[-1] != '/':
         dir += '/'
-    libTitle = args.t
+    projTitle = args.t
 
     print('Starting godoc server on port ' + port + '...')
     p = subprocess.Popen(['/usr/local/bin/godoc', '-http=:' + port])
@@ -115,6 +115,7 @@ if __name__ == '__main__':
     if not os.path.exists(styleDir):
         os.makedirs(styleDir)
 
+    print('Downloading style files...')
     http = httplib2.Http()
     download(http, serverUrl + 'lib/godoc/style.css', styleDir + 'style.css')
     download(http, serverUrl + 'lib/godoc/godocs.js', styleDir + 'godocs.js')
@@ -126,7 +127,7 @@ if __name__ == '__main__':
     download(http, serverUrl + 'lib/godoc/jquery.treeview.js',
              styleDir + 'jquery.treeview.js')
 
-    duckify(http, dir, outDir)
+    duck(http, dir, outDir)
 
     print('Terminating godoc server...')
     p.terminate()
