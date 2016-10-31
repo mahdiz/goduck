@@ -18,6 +18,7 @@ unnecessary links, buttons, etc from the downloaded Godoc pages to generate
 good-looking HTML files that can be browsed completely offline from the Internet
 and without requiring to establish a Godoc webserver on the target machine.
 
+## Usage
 To use GoDuck, you need Python 2.7+ with
 [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup)
 and Go installed on your machine. You can install Beautiful Soup from [here](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-beautiful-soup)
