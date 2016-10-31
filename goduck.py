@@ -14,6 +14,12 @@ def get_open_port():
     return port
 
 
+def download(http, url, dest):
+    s, req = http.request(url)
+    with open(dest, 'w') as outf:
+        outf.write(req)
+
+
 def remove_tag(soup, name, id=None, text=None):
     tag = soup.find(name, id=id, text=text)
     if tag is not None:
@@ -89,7 +95,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     port = str(get_open_port())
-    dir = 'http://localhost:' + port + '/pkg/' + args.d
+    serverUrl = 'http://localhost:' + port + '/'
+    dir = serverUrl + 'pkg/' + args.d
     if dir[-1] != '/':
         dir += '/'
     libTitle = args.t
@@ -102,7 +109,22 @@ if __name__ == '__main__':
     if outDir[-1] != '/':
         outDir += '/'
 
+    # Fetch and save style files
+    styleDir = outDir + '.goduckstyle' + '/'
+    if not os.path.exists(styleDir):
+        os.makedirs(styleDir)
+
     http = httplib2.Http()
+    download(http, serverUrl + 'lib/godoc/style.css', styleDir + 'style.css')
+    download(http, serverUrl + 'lib/godoc/godocs.js', styleDir + 'godocs.js')
+    download(http, serverUrl + 'lib/godoc/jquery.treeview.css',
+             styleDir + 'jquery.treeview.css')
+    download(http, serverUrl + 'lib/godoc/jquery.js', styleDir + 'jquery.js')
+    download(http, serverUrl + 'lib/godoc/jquery.treeview.edit.js',
+             styleDir + 'jquery.treeview.edit.js')
+    download(http, serverUrl + 'lib/godoc/jquery.treeview.js',
+             styleDir + 'jquery.treeview.js')
+
     duckify(http, dir, outDir)
 
     print('Terminating godoc server...')
