@@ -1,4 +1,5 @@
-# GoDuck
+# GoDuck -- Generate offline godoc documentation
+# Run with Python 2.7
 # Mahdi Zamani (mahdi.zamani@yale.edu)
 
 import sys, bs4, argparse, httplib2, subprocess, os, time
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     if outDir[-1] != '/':
         outDir += '/'
 
-    # Fetch and save style files
+    # Download style files
     styleDir = outDir + '.goduckstyle' + '/'
     if not os.path.exists(styleDir):
         os.makedirs(styleDir)
