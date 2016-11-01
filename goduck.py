@@ -1,5 +1,5 @@
 # GoDuck -- Generate offline godoc documentation
-# Run with Python 2.7
+# Run using Python 2.7
 # Mahdi Zamani (mahdi.zamani@yale.edu)
 
 import sys, bs4, argparse, httplib2, subprocess, os, time
@@ -33,7 +33,7 @@ def remove_slash(soup, name, field):
             tag[field] = tag[field][1:]
 
 
-def beautify(soup, depth):
+def beautify(soup, depth=0):
     # Change style paths
     stylePath = '../' * depth + '.goduckstyle/'
     for link in soup.findAll('link'):
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         package += '/'
 
     serverUrl = 'http://localhost:' + port + '/'
-    rootUrl = serverUrl + 'pkg/' + package
+    packageUrl = serverUrl + 'pkg/' + package
     projTitle = args.t
 
     print('Starting godoc server on port ' + port + '...')
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     if rootDir[-1] != '/':
         rootDir += '/'
 
-    # Create go-like directory structure for the package
+    # Create go-like directory structure for the packages
     depth = 0
     packageDir = rootDir
     for dir in package.split('/')[:-2]:
@@ -151,7 +151,27 @@ if __name__ == '__main__':
     download(http, serverUrl + 'lib/godoc/jquery.treeview.js',
              styleDir + 'jquery.treeview.js')
 
-    duck(http, rootUrl, packageDir, package, depth + 1)
+    duck(http, packageUrl, packageDir, package, depth + 1)
+
+    # Add packages list HTML to the root directory
+    s, pkListContent = http.request(serverUrl + 'pkg/')
+    soup = bs4.BeautifulSoup(pkListContent, 'html.parser')
+    beautify(soup)
+
+    # Remove missing packages' entries
+    for link in soup.findAll('a'):
+        if (
+        not os.path.exists(rootDir + link['href'])) and link.parent.name == 'td' \
+                and link.parent.parent.name == 'tr':
+            link.parent.parent.replaceWith('')
+        elif link.parent.name == 'td' and link.parent.parent.name == 'tr':
+            if os.path.exists(rootDir + link['href'] + 'index.html'):
+                link['href'] += 'index.html'
+            else:
+                link['href'] = '#'
+
+    with open(rootDir + 'doc.html', 'w') as outf:
+        outf.write(str(soup))
 
     print('Terminating godoc server...')
     p.terminate()
