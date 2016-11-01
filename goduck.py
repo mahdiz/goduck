@@ -57,18 +57,21 @@ def beautify(soup, depth):
     remove_tag(soup, name="a", text="Documents")
     remove_tag(soup, name="a", text="Help")
     remove_tag(soup, name="a", text="Blog")
+    remove_tag(soup, name="a", text="The Project")
+    remove_tag(soup, name="a", text="Packages")
     remove_tag(soup, name="input", id="search")
+    remove_tag(soup, name="div", id="footer")
 
 
-def duck(http, url, outDir, depth=1):
-    print('Ducking ' + url)
+def duck(http, rootUrl, packageDir, package, depth=1):
+    print('Ducking ' + rootUrl)
 
-    s, content = http.request(url)
+    s, content = http.request(rootUrl)
     soup = bs4.BeautifulSoup(content, 'html.parser')
     beautify(soup, depth)
 
-    subName = url.rsplit('/', 2)[1]
-    newOutDir = outDir + subName + '/'
+    subName = rootUrl.rsplit('/', 2)[1]
+    newOutDir = packageDir + subName + '/'
     if not os.path.exists(newOutDir):
         os.makedirs(newOutDir)
 
@@ -78,8 +81,18 @@ def duck(http, url, outDir, depth=1):
                 link['href'] != '/' and link['href'][0] != '/' and \
                 link['href'][0] != '#' and link['href'][:7] != 'http://' and \
                 link['href'][:8] != "https://" and link['href'][0:4] != 'www':
-            duck(http, url + link['href'], newOutDir, depth + 1)
+            duck(http, rootUrl + link['href'], newOutDir, package, depth + 1)
             link['href'] = link['href'] + 'index.html'
+
+        elif str(link['href']).startswith('/pkg/builtin'):
+            link['href'] = str(link['href']). \
+                replace('/pkg/builtin', 'https://golang.org/pkg/builtin')
+
+        elif str(link['href']).startswith('/pkg/'):
+            link['href'] = str(link['href']).replace('/pkg/', '../' * depth). \
+                replace('/#', '/index.html#')
+            if link['href'][-1] == '/':
+                link['href'] += 'index.html'
 
     with open(newOutDir + 'index.html', 'w') as outf:
         outf.write(str(soup))
@@ -87,8 +100,8 @@ def duck(http, url, outDir, depth=1):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(
-        description='GoDuck - Generate offline godoc documentation (run with Python 2.7)')
+    parser = argparse.ArgumentParser(description=
+                                     'GoDuck - Generate offline godoc documentation (run with Python 2.7)')
     required = parser.add_argument_group('required arguments')
     required.add_argument('-d', help='package to goduck', required=True)
     required.add_argument('-o', help='output path', required=True)
@@ -96,22 +109,33 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     port = str(get_open_port())
+    package = args.d
+    if package[-1] != '/':
+        package += '/'
+
     serverUrl = 'http://localhost:' + port + '/'
-    dir = serverUrl + 'pkg/' + args.d
-    if dir[-1] != '/':
-        dir += '/'
+    rootUrl = serverUrl + 'pkg/' + package
     projTitle = args.t
 
     print('Starting godoc server on port ' + port + '...')
     p = subprocess.Popen(['godoc', '-http=:' + port])
     time.sleep(2)
 
-    outDir = args.o
-    if outDir[-1] != '/':
-        outDir += '/'
+    rootDir = args.o
+    if rootDir[-1] != '/':
+        rootDir += '/'
+
+    # Create go-like directory structure for the package
+    depth = 0
+    packageDir = rootDir
+    for dir in package.split('/')[:-2]:
+        depth += 1
+        packageDir += dir + '/'
+        if not os.path.exists(packageDir):
+            os.makedirs(packageDir)
 
     # Download style files
-    styleDir = outDir + '.goduckstyle' + '/'
+    styleDir = rootDir + '.goduckstyle' + '/'
     if not os.path.exists(styleDir):
         os.makedirs(styleDir)
 
@@ -127,7 +151,7 @@ if __name__ == '__main__':
     download(http, serverUrl + 'lib/godoc/jquery.treeview.js',
              styleDir + 'jquery.treeview.js')
 
-    duck(http, dir, outDir)
+    duck(http, rootUrl, packageDir, package, depth + 1)
 
     print('Terminating godoc server...')
     p.terminate()
