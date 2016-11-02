@@ -34,7 +34,7 @@ For example,
 python goduck.py -d github.com/dedis/cothority -o /Users/mahdiz/goduck -t "The Cothority Project"
 ```
 
-You can then browse the package documentation by opening `index.html` from the
+You can then browse the package documentation by opening `doc.html` from the
 output directory. Clicking on links in this HTML page will take you to other
 HTMLs that correspond to other Go source files in the package.
 
