@@ -31,7 +31,7 @@ python goduck.py -d [package to be goducked] -o [output directory] -t [project t
 
 For example,
 ```bash
-python goduck.py -d ~/doc -o /Users/mahdiz/goduck -t "The Cothority Project"
+python goduck.py -d github.com/dedis/cothority -o /Users/mahdiz/goduck -t "The Cothority Project"
 ```
 
 You can then browse the package documentation by opening `doc.html` from the
