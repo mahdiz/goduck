@@ -33,7 +33,7 @@ def remove_slash(soup, name, field):
             tag[field] = tag[field][1:]
 
 
-def beautify(soup, depth=0):
+def beautify(soup, depth=0, removeTOC=False):
     # Change style paths
     stylePath = '../' * depth + '.goduckstyle/'
     for link in soup.findAll('link'):
@@ -44,6 +44,11 @@ def beautify(soup, depth=0):
         if script.has_attr('src'):
             script['src'] = str(script['src']).replace('/lib/godoc/', stylePath)
 
+    # Change image paths
+    for img in soup.findAll('img'):
+        if img.has_attr('src'):
+            img['src'] = str(img['src']).replace('/doc/gopher/', stylePath)
+
     # Change html title
     if projTitle is not None:
         title = soup.find('title')
@@ -52,6 +57,13 @@ def beautify(soup, depth=0):
     # Change page header
     header = soup.find(name="div", id="heading-wide")
     header.string = projTitle
+    headerNarrow = soup.find(name="div", id="heading-narrow")
+    headerNarrow.string = projTitle
+
+    # Remove table of contents if requested
+    if removeTOC:
+        remove_tag(soup, name="div", id="nav")
+        remove_tag(soup, name="div", id="manual-nav")
 
     # Remove unused menu items
     remove_tag(soup, name="a", text="Documents")
@@ -119,7 +131,7 @@ if __name__ == '__main__':
 
     print('Starting godoc server on port ' + port + '...')
     p = subprocess.Popen(['godoc', '-http=:' + port])
-    time.sleep(2)
+    time.sleep(3)
 
     rootDir = args.o
     if rootDir[-1] != '/':
@@ -139,7 +151,7 @@ if __name__ == '__main__':
     if not os.path.exists(styleDir):
         os.makedirs(styleDir)
 
-    print('Downloading style files...')
+    print('Downloading style and image files...')
     http = httplib2.Http()
     download(http, serverUrl + 'lib/godoc/style.css', styleDir + 'style.css')
     download(http, serverUrl + 'lib/godoc/godocs.js', styleDir + 'godocs.js')
@@ -150,13 +162,14 @@ if __name__ == '__main__':
              styleDir + 'jquery.treeview.edit.js')
     download(http, serverUrl + 'lib/godoc/jquery.treeview.js',
              styleDir + 'jquery.treeview.js')
+    download(http, serverUrl + 'doc/gopher/pkg.png', styleDir + 'pkg.png')
 
     duck(http, packageUrl, packageDir, package, depth + 1)
 
     # Add packages list HTML to the root directory
     s, pkListContent = http.request(serverUrl + 'pkg/')
     soup = bs4.BeautifulSoup(pkListContent, 'html.parser')
-    beautify(soup)
+    beautify(soup, removeTOC=True)
 
     # Remove missing packages' entries
     for link in soup.findAll('a'):
