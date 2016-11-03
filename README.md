@@ -24,7 +24,7 @@ To use GoDuck, you need Python 2.7+ with
 and Go installed on your machine. You can install Beautiful Soup from [here](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#installing-beautiful-soup)
 and Go from [here](https://golang.org/doc/install).
 
-Once you have both of these installed run GoDuck using
+Once you have both installed run GoDuck using
 ```bash
 python goduck.py -d [package to be goducked] -o [output directory] -t [project title]
 ```
@@ -34,7 +34,7 @@ For example,
 python goduck.py -d github.com/dedis/cothority -o /Users/mahdiz/goduck -t "The Cothority Project"
 ```
 
-You can then browse the package documentation by opening `index.html` from the
+You can then browse the package documentation by opening `doc.html` from the
 output directory. Clicking on links in this HTML page will take you to other
 HTMLs that correspond to other Go source files in the package.
 
