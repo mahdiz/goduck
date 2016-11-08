@@ -75,7 +75,7 @@ def beautify(soup, depth=0, removeTOC=False):
     remove_tag(soup, name="div", id="footer")
 
 
-def duck(http, rootUrl, packageDir, package, depth=1):
+def duck(http, rootUrl, packageDir, depth=1):
     print('Ducking ' + rootUrl)
 
     s, content = http.request(rootUrl)
@@ -93,7 +93,7 @@ def duck(http, rootUrl, packageDir, package, depth=1):
                 link['href'] != '/' and link['href'][0] != '/' and \
                 link['href'][0] != '#' and link['href'][:7] != 'http://' and \
                 link['href'][:8] != "https://" and link['href'][0:4] != 'www':
-            duck(http, rootUrl + link['href'], newOutDir, package, depth + 1)
+            duck(http, rootUrl + link['href'], newOutDir, depth + 1)
             link['href'] = link['href'] + 'index.html'
 
         elif str(link['href']).startswith('/pkg/builtin'):
@@ -101,10 +101,13 @@ def duck(http, rootUrl, packageDir, package, depth=1):
                 replace('/pkg/builtin', 'https://golang.org/pkg/builtin')
 
         elif str(link['href']).startswith('/pkg/'):
-            link['href'] = str(link['href']).replace('/pkg/', '../' * depth). \
+            link['href'] = str(link['href']).replace('/pkg/', '../' * depth + 'doc/'). \
                 replace('/#', '/index.html#')
             if link['href'][-1] == '/':
                 link['href'] += 'index.html'
+
+        elif str(link['href']).startswith('/src/'):
+            link['href'] = str(link['href']).replace('/src/', '../' * depth + 'src/')
 
     with open(newOutDir + 'index.html', 'w') as outf:
         outf.write(str(soup))
@@ -138,8 +141,8 @@ if __name__ == '__main__':
         rootDir += '/'
 
     # Create go-like directory structure for the packages
-    depth = 0
-    packageDir = rootDir
+    depth = 1
+    packageDir = rootDir + 'doc/'
     for dir in package.split('/')[:-2]:
         depth += 1
         packageDir += dir + '/'
@@ -164,22 +167,22 @@ if __name__ == '__main__':
              styleDir + 'jquery.treeview.js')
     download(http, serverUrl + 'doc/gopher/pkg.png', styleDir + 'pkg.png')
 
-    duck(http, packageUrl, packageDir, package, depth + 1)
+    duck(http, packageUrl, packageDir, depth + 1)
 
     # Add packages list HTML to the root directory
     s, pkListContent = http.request(serverUrl + 'pkg/')
     soup = bs4.BeautifulSoup(pkListContent, 'html.parser')
     beautify(soup, removeTOC=True)
 
-    # Remove missing packages' entries
+    # Remove missing packages' entries in packages list HTML
     for link in soup.findAll('a'):
         if (
-        not os.path.exists(rootDir + link['href'])) and link.parent.name == 'td' \
+        not os.path.exists(rootDir + 'doc/' + link['href'])) and link.parent.name == 'td' \
                 and link.parent.parent.name == 'tr':
             link.parent.parent.replaceWith('')
         elif link.parent.name == 'td' and link.parent.parent.name == 'tr':
-            if os.path.exists(rootDir + link['href'] + 'index.html'):
-                link['href'] += 'index.html'
+            if os.path.exists(rootDir + 'doc/' + link['href'] + 'index.html'):
+                link['href'] = 'doc/' + link['href'] + 'index.html'
             else:
                 link['href'] = '#'
 
